@@ -114,7 +114,7 @@ class Session:
 
     def constraints(self) -> SessionConstraints:
         """Return the never-repeat state (every pair shown so far, skips included)."""
-        return SessionConstraints({frozenset(record.shown) for record in self.pairs})
+        return SessionConstraints(frozenset(frozenset(record.shown) for record in self.pairs))
 
     def exhausted(self) -> bool:
         """Whether every distinct pair of active characters has been shown."""

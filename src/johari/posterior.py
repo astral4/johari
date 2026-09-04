@@ -188,6 +188,7 @@ class LaplacePosterior:
     """Lower-triangular L with L·Lᵀ = H (jittered if needed), the precision of q."""
     cfg: ModelConfig
     converged: bool
+    """Whether max|∇f| < tol at ``mu``, for the tolerance given to :func:`fit_laplace`."""
 
     @property
     def params(self) -> Params[npt.NDArray[np.float64]]:
@@ -285,10 +286,8 @@ def fit_laplace(
         msg = "objective is not finite at the starting point phi0"
         raise FloatingPointError(msg)
     damping = 1e-6
-    converged = False
     for _ in range(max_iter):
         if np.max(np.abs(grad)) < tol:
-            converged = True
             break
         curvature = np.asarray(hessian(jnp.asarray(phi), data, cfg))
         accepted = None
@@ -307,7 +306,7 @@ def fit_laplace(
         mu=phi,
         chol_precision=_chol_with_jitter(curvature),
         cfg=cfg,
-        converged=converged,
+        converged=bool(np.max(np.abs(grad)) < tol),
     )
 
 
@@ -321,29 +320,31 @@ class FitStatus(enum.Enum):
     """The refit failed numerically and the previous posterior stands."""
 
 
+def _status_of(posterior: LaplacePosterior) -> FitStatus:
+    return FitStatus.OK if posterior.converged else FitStatus.NOT_CONVERGED
+
+
 @dataclass
 class PosteriorCache:
-    """Warm-start cache for the refit-per-answer loop.
-
-    Holds the last fit and starts the next from its MAP when the roster size matches.
-    """
+    """Memoized, warm-started refit for the refit-per-answer loop."""
 
     last: LaplacePosterior | None = None
+    last_input: tuple[list[Observation], int, ModelConfig] | None = None
+    """The ``(observations, n_items, cfg)`` that produced ``last``."""
     min_buffer: int = _OBS_BUFFER
     """Pair-buffer size handed to :func:`pack_observations`."""
 
-    def warm_for(self, cfg: ModelConfig, n_items: int) -> bool:
-        """Whether the next fit warm-starts (i.e. doesn't need compilation) at this roster size."""
-        return self.last is not None and self.last.mu.shape[0] == cfg.dim(n_items)
-
     def fit(self, observations: list[Observation], n_items: int, cfg: ModelConfig) -> tuple[LaplacePosterior, FitStatus]:
-        """Refit from an observation log, warm-starting when the shapes match."""
+        """Refit from an observation log."""
+        if self.last is not None and (observations, n_items, cfg) == self.last_input:
+            return self.last, _status_of(self.last)
         data = pack_observations(observations, n_items, min_buffer=self.min_buffer)
-        previous = self.last if self.warm_for(cfg, n_items) else None
+        previous = self.last if self.last is not None and self.last.mu.shape[0] == cfg.dim(n_items) else None
         try:
             self.last = fit_laplace(data, cfg, n_items, None if previous is None else previous.mu)
         except FloatingPointError, np.linalg.LinAlgError:
             if previous is None:
                 raise
             return previous, FitStatus.STALE
-        return self.last, FitStatus.OK if self.last.converged else FitStatus.NOT_CONVERGED
+        self.last_input = (list(observations), n_items, cfg)
+        return self.last, _status_of(self.last)

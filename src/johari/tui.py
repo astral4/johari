@@ -3,6 +3,7 @@
 import argparse
 import enum
 import math
+import os
 import sys
 import termios
 import tty
@@ -32,6 +33,7 @@ _PAIR_HELP = (
     "  t = about the same · s = skip · u = undo",
     "  d = done (see your list) · q = quit (discards the session) · ? = show this guide again",
 )
+_REVIEW_HELP = ("  done = save and exit · b = back to pairs for more questions · ? = show this guide again",)
 _PAIR_PROMPT = "1 / 2 / t (about the same) › "
 _REVIEW_PROMPT = "done (save and exit) / b (back to pairs) › "
 _QUIT_PROMPT = "Discard session and quit? [y / n] › "
@@ -77,16 +79,9 @@ class Console:
         return input(prompt).strip()
 
     def ask_key(self, prompt: str, allowed: Sequence[str]) -> str:
-        """Read one key from ``allowed``. Other keys are ignored."""
+        """Read one key from ``allowed``. Other keys are ignored. Raises ``EOFError`` at the end of input."""
         if self._raw:
-            sys.stdout.write(prompt)
-            sys.stdout.flush()
-            while True:
-                key = _read_raw_key()
-                if key in allowed:
-                    sys.stdout.write(key + "\n")
-                    sys.stdout.flush()
-                    return key
+            return _ask_raw_key(prompt, allowed)
         while True:
             key = self.ask(prompt)[:1].lower()
             if key in allowed:
@@ -98,22 +93,31 @@ def _stdout_line(text: str) -> None:
     sys.stdout.flush()
 
 
-def _read_raw_key() -> str:
-    """Read one raw keypress. If stdin is closed, then the session ends."""
+def _ask_raw_key(prompt: str, allowed: Sequence[str]) -> str:
+    """Show ``prompt`` and read one key from ``allowed`` in cbreak mode, ignoring other keys."""
     fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
     try:
-        tty.setcbreak(fd)
-        char = sys.stdin.read(1)
+        old = termios.tcgetattr(fd)
+        tty.setcbreak(fd, termios.TCSANOW)
+    except termios.error as error:
+        raise EOFError from error
+    try:
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        while True:
+            try:
+                byte = os.read(fd, 1)
+            except OSError as error:
+                raise EOFError from error
+            if not byte:
+                raise EOFError
+            key = chr(byte[0]).lower()
+            if key in allowed:
+                sys.stdout.write(key + "\n")
+                sys.stdout.flush()
+                return key
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
-    if char == "":
-        raise EOFError
-    if char.isspace():
-        return ""
-    if char == "\x03":
-        raise KeyboardInterrupt
-    return char.lower()
 
 
 def _confirm(console: Console, prompt: str) -> bool:
@@ -147,10 +151,7 @@ def _rank_label(rank: int, *, tied: bool) -> str:
 
 def _refit(session: Session, console: Console, cache: PosteriorCache) -> LaplacePosterior:
     """Refit from the session's observations, saying what the respondent should know."""
-    n = len(session.active)
-    if not cache.warm_for(session.cfg, n):
-        console.say("  (compiling the model...)")
-    posterior, status = cache.fit(session.observations(), n, session.cfg)
+    posterior, status = cache.fit(session.observations(), len(session.active), session.cfg)
     if status is FitStatus.NOT_CONVERGED:
         console.say("  (warning: the model fit did not converge; treat rank intervals with care)")
     elif status is FitStatus.STALE:
@@ -255,20 +256,25 @@ def _pair_prompt(session: Session, console: Console, shown: tuple[int, int], pri
 
 def _pair_command(session: Session, console: Console, line: str) -> Next | None:
     """Handle a non-answer key. Returns None to ask the same pair again."""
-    if line == "?":
-        console.say_all(_PAIR_HELP)
-    elif line == "q":
+    if line == "q":
         return _quit_if_confirmed(console)
-    elif line == "d":
+    if line == "d":
         return Next.REVIEW
-    elif line == "u":
+    if line == "u":
         if session.undo() is Undone.PAIR:
             return Next.PAIRS
         console.say("  (back to the bucket stage)")
         return Next.BUCKETS
-    else:
-        console.say("  (answer one of 1/2/t/s/u/d/q; ? explains the options)")
+    _help_or_hint(console, line, _PAIR_HELP, "  (answer one of 1/2/t/s/u/d/q; ? explains the options)")
     return None
+
+
+def _help_or_hint(console: Console, line: str, help_lines: Sequence[str], hint: str) -> None:
+    """Answer a key that doesn't correspond to a selection. ``?`` shows ``help_lines``, and anything else gets ``hint``."""
+    if line == "?":
+        console.say_all(help_lines)
+    else:
+        console.say(hint)
 
 
 REVIEW_SAMPLES = 512
@@ -348,10 +354,12 @@ def _save(session: Session, console: Console, review: _ReviewList) -> Next | Non
     return Next.DONE
 
 
-def _review_stage(session: Session, console: Console, cache: PosteriorCache) -> Next:
+def _review_stage(session: Session, console: Console, cache: PosteriorCache, *, resume: bool = False) -> Next:
     """Show the list and take commands. Returns PAIRS or DONE."""
     review = _build_review(session, _refit(session, console, cache))
     _render_review(console, session, review)
+    if not resume:
+        console.say_all(_REVIEW_HELP)
     while True:
         command = console.ask(_REVIEW_PROMPT).lower()
         if command == "done":
@@ -359,6 +367,7 @@ def _review_stage(session: Session, console: Console, cache: PosteriorCache) -> 
         elif command == "b":
             verdict = _leave_for_pairs(session, console)
         else:
+            _help_or_hint(console, command, _REVIEW_HELP, "  (answer done or b; ? explains the options)")
             continue
         if verdict is not None:
             return verdict
@@ -439,8 +448,8 @@ def _run_stages(session: Session, console: Console) -> int:
             stage = _pairs_stage(session, console, cache, auto_stop=not reviewed, resume=entered_pairs)
             entered_pairs = True
         elif stage is Next.REVIEW:
+            stage = _review_stage(session, console, cache, resume=reviewed)
             reviewed = True
-            stage = _review_stage(session, console, cache)
         elif stage is Next.QUIT:
             console.say("Session discarded.")
             return 0

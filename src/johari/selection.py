@@ -37,7 +37,7 @@ class SelectionConfig:
     cand_cap: int = 448
     """Candidates scored per step (padded to exactly this count)."""
     window_jitter: int = 2
-    """Extra pairs per mu-adjacent pair, drawn from its rank-overlap neighborhood."""
+    """Extra pairs per mu-adjacent pair, each keeping one of its items and swapping the other for one from its rank-overlap neighborhood."""
     n_uncertain: int = 5
     """Anchors for uncertainty-led pairs."""
     n_probes: int = 3
@@ -60,11 +60,11 @@ class SelectionConfig:
                 raise ValueError(msg)
 
 
-@dataclass
+@dataclass(frozen=True)
 class SessionConstraints:
     """Pairs already shown this session."""
 
-    seen_sets: set[frozenset[int]] = field(default_factory=set)
+    seen_sets: frozenset[frozenset[int]] = field(default_factory=frozenset)
 
     def allows(self, items: frozenset[int]) -> bool:
         """Check a candidate pair against the never-repeat rule."""
@@ -78,10 +78,6 @@ class SessionConstraints:
         """Whether every distinct pair of ``n_items`` items has been shown."""
         return self.unshown(n_items) <= 0
 
-    def record(self, items: frozenset[int]) -> None:
-        """Register a shown pair."""
-        self.seen_sets.add(items)
-
 
 def _window_candidates(
     ranked: npt.NDArray[np.int64],
@@ -89,7 +85,7 @@ def _window_candidates(
     jitter: int,
     rng: np.random.Generator,
 ) -> list[npt.NDArray[np.int64]]:
-    """Return mu-adjacent pairs, each with ``jitter`` pairs from its neighborhood.
+    """Return mu-adjacent pairs, each with ``jitter`` variants that keep one of its items and swap the other for a neighbor.
 
     The neighborhood is every other item whose rank interval overlaps the pair's.
     """
@@ -112,10 +108,7 @@ def _window_candidates(
             continue
         for _ in range(jitter):
             variant = window.copy()
-            n_swap = min(2, outside.size)
-            swap_in = rng.choice(outside, size=n_swap, replace=False)
-            swap_pos = rng.choice(2, size=n_swap, replace=False)
-            variant[swap_pos] = swap_in
+            variant[rng.integers(2)] = rng.choice(outside)
             out.append(variant)
     return out
 
@@ -149,8 +142,11 @@ def _probe_candidates(
         others = np.setdiff1d(ranked, np.array([anchor]))
         if others.size == 0:
             continue
-        near = np.abs(summary.expected_rank[others] - summary.expected_rank[anchor])
-        resolved_first = others[np.lexsort((near, summary.width[others]))]
+        expected = summary.expected_rank[others]
+        inside = others[(expected >= summary.rank_lo[anchor]) & (expected <= summary.rank_hi[anchor])]
+        pool = inside if inside.size else others
+        near = np.abs(summary.expected_rank[pool] - summary.expected_rank[anchor])
+        resolved_first = pool[np.lexsort((near, summary.width[pool]))]
         out.append(np.array([anchor, resolved_first[0]]))
     return out
 
