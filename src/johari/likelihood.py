@@ -3,6 +3,7 @@
 A pair is a Rao-Kupper (1967) threshold comparison under a careless mixture (:func:`pair_outcome_logprobs`).
 A bucket mark is an ordinal probit under a uniform slip (:func:`bucket_logprob`). Every formula is shift-invariant in θ
 and evaluated in log space after subtracting the larger utility, so no term underflows for any finite spread.
+The careless rate enters as its logit, so the mixture is finite for any finite logit as well.
 """
 
 import math
@@ -24,7 +25,7 @@ _MIN_DELTA = 1e-300
 
 def pair_outcome_logprobs(
     theta_pair: ArrayLike,
-    eps: ArrayLike,
+    eps_logit: ArrayLike,
     delta: ArrayLike,
     cfg: ModelConfig,
 ) -> jax.Array:
@@ -40,9 +41,9 @@ def pair_outcome_logprobs(
 
         P_obs(pick) = (1 - ε)·P(pick) + ε / 2,    P_obs(same) = (1 - ε)·P(same).
 
-    ``theta_pair`` is ``(..., 2)`` in display order; ``eps`` and ``delta`` broadcast against its batch dimensions.
+    ``theta_pair`` is ``(..., 2)`` in display order; ``eps_logit`` (logit ε) and ``delta`` broadcast against its batch dimensions.
     """
-    theta_pair, eps = jnp.asarray(theta_pair), jnp.asarray(eps)
+    theta_pair, eps_logit = jnp.asarray(theta_pair), jnp.asarray(eps_logit)
     scale = cfg.beta_pair
     delta = jnp.maximum(jnp.asarray(delta), _MIN_DELTA) * scale
     z = scale * (theta_pair - jnp.max(theta_pair, axis=-1)[..., None])
@@ -54,11 +55,12 @@ def pair_outcome_logprobs(
     # log(t² - 1) = 2·delta + log(1 - exp(-2·delta)).
     log_t2m1 = 2.0 * delta + _log1mexp(-2.0 * delta)
     log_same = log_t2m1 + log_wa + log_wb - log_da - log_db
+    log_eps, log_careful = jax.nn.log_sigmoid(eps_logit), jax.nn.log_sigmoid(-eps_logit)
     log_picks = jnp.logaddexp(
-        jnp.log1p(-eps)[..., None] + jnp.stack([log_pa, log_pb], axis=-1),
-        jnp.log(eps)[..., None] - math.log(2),
+        log_careful[..., None] + jnp.stack([log_pa, log_pb], axis=-1),
+        log_eps[..., None] - math.log(2),
     )
-    log_tie = jnp.log1p(-eps) + log_same
+    log_tie = log_careful + log_same
     return jnp.concatenate([log_picks, log_tie[..., None]], axis=-1)
 
 

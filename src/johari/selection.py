@@ -337,7 +337,7 @@ def contribution_pairs(
 @functools.partial(jax.jit, static_argnames="cfg")
 def _elr_batch(
     theta: jax.Array,
-    eps: jax.Array,
+    eps_logit: jax.Array,
     delta: jax.Array,
     candidates: jax.Array,
     ii: jax.Array,
@@ -361,7 +361,7 @@ def _elr_batch(
     gap = theta[:, ii] - theta[:, jj]
     ind_ij = (gap > delta[:, None]).astype(theta.dtype)
     ind_ji = (gap < -delta[:, None]).astype(theta.dtype)
-    logp = pair_outcome_logprobs(theta[:, candidates], eps[:, None], delta[:, None], cfg)
+    logp = pair_outcome_logprobs(theta[:, candidates], eps_logit[:, None], delta[:, None], cfg)
     p = jnp.exp(jnp.minimum(logp, 0.0))
     p_bar = p.mean(axis=0)
     w = p / jnp.maximum(p.sum(axis=0), 1e-300)
@@ -387,7 +387,7 @@ def score_candidates_elr(
     p = unpack(jnp.asarray(samples))
     delta = jnp.exp(p.log_delta)
     ii, jj, weights, risk_now = contribution_pairs(p.theta, delta, summary, sel.pair_budget)
-    scored = _elr_batch(p.theta, jax.nn.sigmoid(p.eps_logit), delta, candidates, ii, jj, weights, cfg)
+    scored = _elr_batch(p.theta, p.eps_logit, delta, candidates, ii, jj, weights, cfg)
     return risk_now - np.asarray(scored)
 
 

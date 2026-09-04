@@ -96,8 +96,7 @@ def log_likelihood(phi: jax.Array, data: ObsData, cfg: ModelConfig) -> jax.Array
     so every row's log-probability and gradient are finite and the masks only select relevance.
     """
     p = unpack(phi)
-    eps = jax.nn.sigmoid(p.eps_logit)
-    pair_logp = pair_outcome_logprobs(p.theta[data.pair_items], eps, jnp.exp(p.log_delta), cfg)
+    pair_logp = pair_outcome_logprobs(p.theta[data.pair_items], p.eps_logit, jnp.exp(p.log_delta), cfg)
     lp_pair = jnp.take_along_axis(pair_logp, data.pair_outcome[:, None], axis=-1)[:, 0]
     pair_ll = jnp.sum(jnp.where(data.pair_mask, lp_pair, 0.0))
     c2 = p.c1 + jnp.exp(p.log_gap)
@@ -117,7 +116,7 @@ _ROW_EPS, _ROW_DELTA = 2, 3
 
 def _pair_row_nll(row: jax.Array, outcome: jax.Array, live: jax.Array, cfg: ModelConfig) -> jax.Array:
     """Negative log likelihood of one pair row over ``[theta_a, theta_b, eps_logit, log_delta]``."""
-    logp = pair_outcome_logprobs(row[:_ROW_EPS], jax.nn.sigmoid(row[_ROW_EPS]), jnp.exp(row[_ROW_DELTA]), cfg)
+    logp = pair_outcome_logprobs(row[:_ROW_EPS], row[_ROW_EPS], jnp.exp(row[_ROW_DELTA]), cfg)
     return -jnp.where(live, logp[outcome], 0.0)
 
 
