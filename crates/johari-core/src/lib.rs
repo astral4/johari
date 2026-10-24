@@ -60,6 +60,7 @@ mod quadrature;
 mod rank_stats;
 mod ranking;
 mod rng;
+mod selection;
 mod special;
 mod twins;
 
