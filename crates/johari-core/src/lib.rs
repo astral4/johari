@@ -46,6 +46,7 @@ mod gaussian;
 mod jet;
 mod lanes;
 mod linalg;
+mod model;
 mod observations;
 mod quadrature;
 mod rng;
