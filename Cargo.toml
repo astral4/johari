@@ -4,7 +4,7 @@ members = ["crates/johari-core", "crates/johari-wasm"]
 default-members = ["crates/johari-core"]
 
 [workspace.package]
-version = "0.0.0"
+version = "1.0.0"
 authors = ["Kyle Chen"]
 edition = "2024"
 repository = "https://github.com/astral4/johari"

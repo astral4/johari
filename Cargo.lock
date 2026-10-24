@@ -10,14 +10,14 @@ checksum = "c880a97d28a3681c0267bd29cff89621202715b065127cd445fa0f0fe0aa2880"
 
 [[package]]
 name = "johari-core"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "libm",
 ]
 
 [[package]]
 name = "johari-wasm"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "johari-core",
  "talc",
