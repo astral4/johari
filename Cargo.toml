@@ -1,0 +1,68 @@
+[workspace]
+resolver = "3"
+members = ["crates/johari-core"]
+
+[workspace.package]
+version = "0.0.0"
+authors = ["Kyle Chen"]
+edition = "2024"
+repository = "https://github.com/astral4/johari"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+libm = { version = "0.2", default-features = false }
+
+[workspace.lints.rust]
+ffi_unwind_calls = "warn"
+improper_ctypes = "deny"
+improper_ctypes_definitions = "deny"
+let_underscore_drop = "deny"
+macro_use_extern_crate = "deny"
+meta_variable_misuse = "deny"
+missing_abi = "deny"
+non_ascii_idents = "forbid"
+non_local_definitions = "warn"
+nonstandard_style = { level = "deny", priority = -1 }
+redundant_lifetimes = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+unit_bindings = "deny"
+unreachable_pub = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+unused_crate_dependencies = "deny"
+unused_import_braces = "deny"
+unused_lifetimes = "deny"
+unused_macro_rules = "deny"
+unused_qualifications = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+as_ptr_cast_mut = "deny"
+big_endian_bytes = "deny"
+dbg_macro = "deny"
+doc_paragraphs_missing_punctuation = "deny"
+exit = "deny"
+fn_to_numeric_cast_any = "deny"
+host_endian_bytes = "deny"
+mem_forget = "deny"
+missing_assert_message = "deny"
+precedence_bits = "deny"
+print_stdout = "deny"
+self_named_module_files = "deny"
+separated_literal_suffix = "deny"
+todo = "deny"
+transmute_undefined_repr = "deny"
+unimplemented = "deny"
+unnecessary_safety_comment = "deny"
+unnecessary_safety_doc = "deny"
+unused_trait_names = "deny"
+wildcard_enum_match_arm = "deny"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
+[profile.test]
+opt-level = 1
