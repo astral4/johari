@@ -1,6 +1,9 @@
 //! Testing utilities.
 
 use crate::gaussian::Sym2;
+use crate::observations::{Bucket, Observations, Pair, PairObs};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::f64::consts::{FRAC_1_SQRT_2, FRAC_1_SQRT_2PI};
 use core::iter::zip;
 use libm::{erfc, exp};
@@ -53,12 +56,57 @@ impl Lcg {
             items.swap(k, self.below(k as u64 + 1) as usize);
         }
     }
+
+    /// Uniformly sample an ordered pair of distinct items of `n`.
+    #[expect(clippy::cast_possible_truncation, reason = "test sizes are tiny")]
+    fn pair(&mut self, n: usize) -> (u32, u32) {
+        let a = self.below(n as u64) as u32;
+        (a, (a + 1 + self.below(n as u64 - 1) as u32) % n as u32)
+    }
 }
 
 /// A random 2 × 2 symmetric positive-definite matrix.
 pub(crate) fn random_spd(rng: &mut Lcg) -> Sym2 {
     let (u, v, w) = (rng.sym(2.), rng.sym(2.), rng.sym(2.));
     Sym2 { xx: u * u + 0.05, xy: u * v, yy: v * v + w * w + 0.05 }
+}
+
+/// A random log over `n` items with `answers` answered pairs.
+pub(crate) fn random_log(rng: &mut Lcg, n: usize, answers: usize) -> Observations {
+    let theta: Vec<_> = (0..n).map(|_| rng.sym(4.)).collect();
+    let pairs = (0..answers)
+        .map(|_| {
+            let (a, b) = rng.pair(n);
+            answer(a, b, theta[a as usize] - theta[b as usize] + rng.sym(1.))
+        })
+        .collect();
+    let buckets = theta.iter().copied().map(bucket_of).collect();
+    Observations { buckets, pairs }
+}
+
+/// The answer to the pair (a, b) whose utility gap is `gap`, including noise.
+fn answer(a: u32, b: u32, gap: f64) -> PairObs {
+    if gap > 0.6 {
+        PairObs::Pick { above: a, below: b }
+    } else if gap < -0.6 {
+        PairObs::Pick { above: b, below: a }
+    } else {
+        PairObs::Same(Pair::new(a, b))
+    }
+}
+
+/// The bucket for a utility `t`.
+fn bucket_of(t: f64) -> Bucket {
+    Bucket::ALL[usize::from(t >= -1.5) + usize::from(t >= 1.5)]
+}
+
+/// A log over ten items with various kinds of twins.
+pub(crate) fn twin_log() -> Observations {
+    use Bucket::{Fine, Meh};
+    let buckets = vec![Fine, Fine, Fine, Fine, Fine, Fine, Fine, Meh, Fine, Fine];
+    let pick = |above, below| PairObs::Pick { above, below };
+    let pairs = vec![pick(0, 1), pick(0, 2), pick(0, 3), pick(0, 4), PairObs::Same(Pair::new(3, 4)), pick(5, 6), pick(0, 7)];
+    Observations { buckets, pairs }
 }
 
 /// Whether a symmetric 2 × 2 matrix is positive semidefinite within rounding.

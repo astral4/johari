@@ -46,9 +46,11 @@ mod gaussian;
 mod jet;
 mod lanes;
 mod linalg;
+mod observations;
 mod quadrature;
 mod rng;
 mod special;
+mod twins;
 
 #[cfg(test)]
 mod testing;
