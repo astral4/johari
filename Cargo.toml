@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/johari-core"]
+members = ["crates/johari-core", "crates/johari-wasm"]
+default-members = ["crates/johari-core"]
 
 [workspace.package]
 version = "0.0.0"
@@ -12,6 +13,7 @@ publish = false
 
 [workspace.dependencies]
 libm = { version = "0.2", default-features = false }
+talc = { version = "5", default-features = false }
 
 [workspace.lints.rust]
 ffi_unwind_calls = "warn"

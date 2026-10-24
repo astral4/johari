@@ -1,0 +1,19 @@
+[package]
+name = "johari-wasm"
+description = "WebAssembly C-ABI wrapper over johari-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+johari-core = { path = "../johari-core" }
+talc.workspace = true
+
+[lints]
+workspace = true
