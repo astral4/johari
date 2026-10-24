@@ -10,7 +10,7 @@ Then, the pairwise comparison stage refines that picture. For each head-to-head 
 
 Instead of asking pairs at random, the model calculates what an answer to each pair not yet shown would be worth, then asks the one whose answer is expected to do the most for the final list. A mistake about items toward the top costs more than one about items near the bottom, so the model prioritizes getting the top correct. The application automatically stops asking once the value of the best remaining pair drops below a threshold.
 
-Credible intervals are computed for each item's rank in the final list. items whose estimated scores are sufficiently close are treated as tied at the same rank.
+Credible intervals are computed for each item's rank in the final list. Items whose estimated scores are sufficiently close are considered tied at the same rank.
 
 ## Development
 
