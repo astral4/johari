@@ -868,6 +868,43 @@ pub(crate) fn fit(obs: &Observations) -> Posterior {
     Posterior::new(q.chol.unplace(&q.mu), q.chol, twins, careless)
 }
 
+#[cfg(feature = "bench")]
+pub(crate) fn fit_diagnostics(obs: &Observations) -> (usize, bool) {
+    let (problem, start) = Problem::new(obs, &Twins::of(obs));
+    let (best, sweeps) = problem.settle(start);
+    (sweeps, best.change < TOL)
+}
+
+#[cfg(feature = "bench")]
+pub(crate) struct Bench {
+    problem: Problem,
+    sites: Vec<SiteParams>,
+    q: Moments,
+    estimates: Estimates,
+    targets: Vec<SiteParams>,
+}
+
+#[cfg(feature = "bench")]
+impl Bench {
+    pub(crate) fn new(obs: &Observations) -> Self {
+        let ((problem, sites), estimates) = (Problem::new(obs, &Twins::of(obs)), Estimates::prior_medians());
+        let q = problem.moments(&sites).expect("the start's q is finite");
+        let targets = problem.sweep(&sites, &q, estimates).1;
+        Self { problem, sites, q, estimates, targets }
+    }
+
+    /// The sweep's estimates and matches as a checksum.
+    pub(crate) fn sweep(&self) -> f64 {
+        let (Estimates { s_b, careless, .. }, targets) = self.problem.sweep(&self.sites, &self.q, self.estimates);
+        s_b + careless.rates()[0] + targets.iter().map(|&site| unflatten(site).precision.xx).sum::<f64>()
+    }
+
+    /// q from the sweep's matches as a checksum.
+    pub(crate) fn moments(&self) -> f64 {
+        self.problem.moments(&self.targets).map_or(f64::NAN, |q| q.mu[0])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Likelihood, MixtureSums, Site, fisher_weight, proper_site, unflatten};

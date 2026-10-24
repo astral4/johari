@@ -17,6 +17,9 @@ pub use crate::observations::Bucket;
 pub use crate::rank_stats::Level;
 pub use crate::ranking::{RankedList, TieCost};
 
+#[cfg(feature = "bench")]
+pub mod bench;
+
 /// The answer to a shown pair.
 #[derive(Clone, Copy)]
 pub enum Outcome {

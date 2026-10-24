@@ -11,6 +11,8 @@ mod anderson;
 mod ep;
 
 pub(crate) use ep::fit;
+#[cfg(feature = "bench")]
+pub(crate) use ep::{Bench, fit_diagnostics};
 
 /// The posterior approximation q = N(μ, Λ⁻¹) of an observation log.
 pub(crate) struct Posterior {

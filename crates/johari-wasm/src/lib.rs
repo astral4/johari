@@ -14,6 +14,9 @@ use core::panic::PanicInfo;
 use johari_core::session::{Bucket, Level, Outcome, RosterSize, Session, SessionError, TieCost, Undone};
 use talc::wasm::{WasmDynamicTalc, new_wasm_dynamic_allocator};
 
+#[cfg(feature = "bench")]
+use johari_core::session::bench::{fit_diagnostics, phase_name, run};
+
 #[global_allocator]
 static TALC: WasmDynamicTalc = new_wasm_dynamic_allocator();
 
@@ -162,5 +165,35 @@ pub extern "C" fn johari_review(session: Option<&mut Session>, level: f64) -> i3
     let list = &review.list;
     let head = [to_u32(list.order.len()), to_u32(list.group_sizes.len())];
     give(&[&head, &list.order, &list.group_sizes, &review.rank_lo, &review.rank_hi]);
+    0
+}
+
+/// Fit diagnostics for the session's current log. Returns the number of sweeps and whether the fit converged.
+#[cfg(feature = "bench")]
+#[unsafe(no_mangle)]
+#[optimize(size)]
+pub extern "C" fn johari_bench_fit_diagnostics(session: Option<&mut Session>) -> i32 {
+    let Some(s) = session else { return ERR_BAD_POINTER };
+    let (sweeps, converged) = fit_diagnostics(s);
+    put([to_u32(sweeps), u32::from(converged)]);
+    0
+}
+
+/// Time one phase of a step.
+#[cfg(feature = "bench")]
+#[unsafe(no_mangle)]
+#[optimize(size)]
+pub extern "C" fn johari_bench(session: Option<&mut Session>, phase: u32, iters: u32) -> f64 {
+    let Some(s) = session else { return f64::NAN };
+    run(s, phase, iters)
+}
+
+/// Write the name of phase `phase` of [`johari_bench`] into the result record.
+#[cfg(feature = "bench")]
+#[unsafe(no_mangle)]
+#[optimize(size)]
+pub extern "C" fn johari_bench_phase(phase: u32) -> i32 {
+    let Some(name) = phase_name(phase) else { return 1 };
+    put([to_u32(name.as_ptr().addr()), to_u32(name.len())]);
     0
 }

@@ -11,6 +11,9 @@ publish.workspace = true
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+bench = ["johari-core/bench"]
+
 [dependencies]
 johari-core = { path = "../johari-core" }
 talc.workspace = true
