@@ -58,6 +58,7 @@ mod observations;
 mod posterior;
 mod quadrature;
 mod rank_stats;
+mod ranking;
 mod rng;
 mod special;
 mod twins;

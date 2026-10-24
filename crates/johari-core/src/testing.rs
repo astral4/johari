@@ -2,11 +2,14 @@
 
 use crate::gaussian::Sym2;
 use crate::observations::{Bucket, Observations, Pair, PairObs};
+use crate::ranking::TieCost;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::f64::consts::{FRAC_1_SQRT_2, FRAC_1_SQRT_2PI};
 use core::iter::zip;
 use libm::{erfc, exp};
+
+pub(crate) const TIE_COST: TieCost = TieCost::new(0.8).unwrap();
 
 /// φ(x).
 pub(crate) fn normal_density(x: f64) -> f64 {
