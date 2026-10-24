@@ -4,7 +4,7 @@ Johari is a tool for creating personal ranked lists of favorite items.
 
 ## How it works
 
-Johari approaches list-making as a Bayesian inference problem. Every item has a hidden score for how much you like them, and each answer you give is a noisy glimpse of those scores. Sessions start with a brief "bucket" stage where you sort each item into tiers or skip them. This gives the model a rough picture of your preferences before any comparisons are shown.
+Johari approaches list-making as a Bayesian inference problem. Every item has a hidden score for how much you like it, and each answer you give is a noisy glimpse of those scores. Sessions start with a brief "bucket" stage where you sort each item into tiers or skip it. This gives the model a rough picture of your preferences before any comparisons are shown.
 
 Then, the pairwise comparison stage refines that picture. For each head-to-head answer, the model assumes you perceive the gap between the two items' scores. You pick one of the options if the gap clears a learned indifference threshold, or answer "about the same" if it doesn't. A small proportion of answers is taken to be "careless" (random selection that doesn't relate to true preferences), so inconsistencies can't distort the entire list.
 
