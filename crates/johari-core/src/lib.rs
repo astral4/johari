@@ -34,9 +34,18 @@
 #![feature(optimize_attribute)]
 #![feature(portable_simd)]
 
+extern crate alloc;
+
+macro_rules! zip {
+    ($a:expr, $b:expr, $c:expr $(,)?) => {
+        ::core::iter::zip($a, ::core::iter::zip($b, $c)).map(|(a, (b, c))| (a, b, c))
+    };
+}
+
 mod gaussian;
 mod jet;
 mod lanes;
+mod linalg;
 mod quadrature;
 mod rng;
 mod special;
