@@ -40,6 +40,9 @@ macro_rules! zip {
     ($a:expr, $b:expr, $c:expr $(,)?) => {
         ::core::iter::zip($a, ::core::iter::zip($b, $c)).map(|(a, (b, c))| (a, b, c))
     };
+    ($a:expr, $b:expr, $c:expr, $d:expr $(,)?) => {
+        ::core::iter::zip($a, ::core::iter::zip($b, ::core::iter::zip($c, $d))).map(|(a, (b, (c, d)))| (a, b, c, d))
+    };
 }
 
 mod gaussian;
@@ -48,6 +51,7 @@ mod lanes;
 mod linalg;
 mod model;
 mod observations;
+mod posterior;
 mod quadrature;
 mod rng;
 mod special;
