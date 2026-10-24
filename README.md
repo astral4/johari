@@ -4,13 +4,13 @@ Johari is a tool for creating personal ranked lists of favorite items.
 
 ## How it works
 
-Johari approaches list-making as a Bayesian inference problem. Every character has a hidden score for how much you like them, and each answer you give is a noisy glimpse of those scores. Sessions start with a brief "bucket" stage where you sort each character into tiers or skip them. This gives the model a rough picture of your preferences before any comparisons are shown.
+Johari approaches list-making as a Bayesian inference problem. Every item has a hidden score for how much you like them, and each answer you give is a noisy glimpse of those scores. Sessions start with a brief "bucket" stage where you sort each item into tiers or skip them. This gives the model a rough picture of your preferences before any comparisons are shown.
 
-Then, the pairwise comparison stage refines that picture. For each head-to-head answer, the model assumes you perceive the gap between the two characters' scores. You pick one of the options if the gap clears a learned indifference threshold, or answer "about the same" if it doesn't. A small proportion of answers is taken to be "careless" (random selection that doesn't relate to true preferences), so inconsistencies can't distort the entire list.
+Then, the pairwise comparison stage refines that picture. For each head-to-head answer, the model assumes you perceive the gap between the two items' scores. You pick one of the options if the gap clears a learned indifference threshold, or answer "about the same" if it doesn't. A small proportion of answers is taken to be "careless" (random selection that doesn't relate to true preferences), so inconsistencies can't distort the entire list.
 
-Instead of asking pairs at random, the model calculates what an answer to each pair not yet shown would be worth, then asks the one whose answer is expected to do the most for the final list. A mistake about characters toward the top costs more than one about characters near the bottom, so the model prioritizes getting the top correct. The application automatically stops asking once the value of the best remaining pair drops below a threshold.
+Instead of asking pairs at random, the model calculates what an answer to each pair not yet shown would be worth, then asks the one whose answer is expected to do the most for the final list. A mistake about items toward the top costs more than one about items near the bottom, so the model prioritizes getting the top correct. The application automatically stops asking once the value of the best remaining pair drops below a threshold.
 
-Credible intervals are computed for each character's rank in the final list. Characters whose estimated scores are sufficiently close are treated as tied at the same rank.
+Credible intervals are computed for each item's rank in the final list. items whose estimated scores are sufficiently close are treated as tied at the same rank.
 
 ## Development
 
