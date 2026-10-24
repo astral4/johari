@@ -289,11 +289,11 @@ impl ItemRows {
 
 /// A review's interval level.
 #[derive(Clone, Copy)]
-pub(crate) struct Level(f64);
+pub struct Level(f64);
 
 impl Level {
     #[must_use]
-    pub(crate) const fn new(x: f64) -> Option<Self> {
+    pub const fn new(x: f64) -> Option<Self> {
         if x >= 0. && x <= 1. { Some(Self(x)) } else { None }
     }
 

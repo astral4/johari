@@ -8,11 +8,11 @@ use core::iter::zip;
 
 /// A session's tie cost τ; i.e. what a false tie costs in the final list's loss.
 #[derive(Clone, Copy)]
-pub(crate) struct TieCost(f64);
+pub struct TieCost(f64);
 
 impl TieCost {
     #[must_use]
-    pub(crate) const fn new(x: f64) -> Option<Self> {
+    pub const fn new(x: f64) -> Option<Self> {
         if x > 0. && x <= 1. { Some(Self(x)) } else { None }
     }
 
@@ -22,11 +22,11 @@ impl TieCost {
 }
 
 /// A ranked list.
-pub(crate) struct RankedList {
+pub struct RankedList {
     /// Items, best first.
-    pub(crate) order: Vec<u32>,
+    pub order: Vec<u32>,
     /// Sizes of consecutive tie groups over `order`.
-    pub(crate) group_sizes: Vec<u32>,
+    pub group_sizes: Vec<u32>,
 }
 
 impl RankedList {

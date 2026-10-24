@@ -64,5 +64,7 @@ mod selection;
 mod special;
 mod twins;
 
+pub mod session;
+
 #[cfg(test)]
 mod testing;

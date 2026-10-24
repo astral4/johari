@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 
 /// A bucket from the bucket stage in increasing order of utility.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Bucket {
+pub enum Bucket {
     Meh,
     Fine,
     Love,
