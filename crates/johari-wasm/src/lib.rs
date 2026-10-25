@@ -1,7 +1,6 @@
 //! WebAssembly C-ABI wrapper over `johari-core`.
 
 #![no_std]
-#![feature(optimize_attribute)]
 #![feature(sync_unsafe_cell)]
 
 extern crate alloc;

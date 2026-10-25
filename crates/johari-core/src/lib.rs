@@ -31,7 +31,6 @@
 #![feature(cmp_minmax)]
 #![feature(core_float_math)]
 #![feature(more_float_constants)]
-#![feature(optimize_attribute)]
 #![feature(portable_simd)]
 
 extern crate alloc;
