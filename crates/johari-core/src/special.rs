@@ -102,7 +102,7 @@ pub(crate) struct KernelTable<V> {
     ln2: [V; 2],
     /// P; i.e. [`EXP_POLY`] in the table's precision.
     exp_poly: [V; 5],
-    /// 1/root(4, 2).
+    /// 1/(4 * sqrt(2)).
     t_scale: V,
     /// R; i.e. [`ERFCX_POLY`] in the table's precision.
     erfcx_poly: [V; 7],
@@ -172,7 +172,7 @@ const fn splat_each<T: SimdElement, const L: usize, const N: usize>(xs: [T; N]) 
 
 /// Φ(x) and φ(x) per lane.
 pub(crate) fn ndtr_lanes<V: Lane>(x: V) -> [V; 2] {
-    // Let e = e^(-x²/2), t = 1/(1 + |x|/root(4, 2)), and R = `ERFCX_POLY`. Then, the smaller tail is:
+    // Let e = e^(-x²/2), t = 1/(1 + |x|/(4 * sqrt(2))), and R = `ERFCX_POLY`. Then, the smaller tail is:
     //
     // Φ(-|x|) = ½·erfc(|x|/sqrt(2))
     //         = ½·erfcx(|x|/sqrt(2))·e
