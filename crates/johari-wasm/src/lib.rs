@@ -70,15 +70,17 @@ fn to_u32(n: usize) -> u32 {
     u32::try_from(n).expect("usize is 32 bits on wasm32")
 }
 
+type Record = [u64; 3];
+
 /// The result record.
-static RECORD: SyncUnsafeCell<[u64; 3]> = SyncUnsafeCell::new([0; 3]);
+static RECORD: SyncUnsafeCell<Record> = SyncUnsafeCell::new([0; 3]);
 
 /// The block of a list result.
 static BLOCK: SyncUnsafeCell<Vec<u32>> = SyncUnsafeCell::new(Vec::new());
 
 /// Write `values` into `RECORD`.
 fn put<T, const N: usize>(values: [T; N]) {
-    const { assert!(size_of::<[T; N]>() <= size_of::<[u64; 3]>() && align_of::<T>() <= align_of::<u64>(), "the record holds the values") };
+    const { assert!(size_of::<[T; N]>() <= size_of::<Record>() && align_of::<T>() <= align_of::<Record>(), "the record holds the values") };
     // SAFETY: The record holds aligned `[T; N]` and there is no live reference to it.
     unsafe { RECORD.get().cast::<[T; N]>().write(values) }
 }

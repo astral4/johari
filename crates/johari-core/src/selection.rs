@@ -100,9 +100,9 @@ impl Scorer {
                 let [tail, density] = ndtr_lanes(x);
                 let [first, second] = max_lanes(x * tail + density, f64x2::splat(0.)).to_array();
                 let kinks = if boundary > 0. { tie_jump * (first + second) } else { 2. * density[0] * second };
-                let weight = weights.get(c, d);
+                let settled = f64::from(weights.get(c, d)) * kinks;
                 #[expect(clippy::cast_possible_truncation, reason = "the solves run in f32")]
-                let edge = (f64::from(weight) * kinks * inv_sd * inv_sd) as f32;
+                let edge = (settled * inv_sd * inv_sd) as f32;
                 *between.get_mut(c, d) = -edge;
                 *between.get_mut(d, c) = -edge;
             }

@@ -21,15 +21,3 @@ The model is implemented in Rust and compiled to WebAssembly for a website front
 - `web/`: `johari.js` for wrapping exports; `worker.js` for hosting the module in a Web Worker; `client.js` for the main-thread client.
 
 Building the project requires [rustup/Cargo](https://www.rust-lang.org/tools/install) and [binaryen](https://github.com/WebAssembly/binaryen) (`wasm-opt`). Running tests and benchmarks additionally requires [Node](https://nodejs.org/en/download). Use [just](https://github.com/casey/just) and see [justfile](justfile) for basic commands and workflows.
-
-```console
-just --list    # list all recipes
-just build     # build for wasm32 into web/johari.wasm
-just check     # run tests; check formatting, docs, and lints
-just bench     # time a simulated session's calls
-just phases    # time each phase of a step
-just fuel      # count instructions per phase and per call
-just trace     # trace a simulated session step by step to diff against another build
-just sweep     # summarize simulated sessions over 20 seeds to compare distributions
-just size      # list the module's largest functions with twiggy
-```
