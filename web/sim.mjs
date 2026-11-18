@@ -115,7 +115,7 @@ function normalFrom(rand) {
 }
 
 const BETA = 3;
-const DELTA = 1.0;
+const DELTA = 0.25;
 const SIGMA0 = 3.75;
 const BUCKET_CUTS = [-1.5, 1.0];
 const BUCKETS = Object.values(Bucket);
