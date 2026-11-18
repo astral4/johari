@@ -69,7 +69,7 @@ impl Sym2 {
     pub(crate) fn inverse(self) -> Option<Self> {
         let Self { xx, xy, yy } = self;
         let det = self.det();
-        (xx > 0. && det > 0.).then(|| Self { xx: yy / det, xy: -xy / det, yy: xx / det })
+        (xx > 0. && det > 0.).then_some(Self { xx: yy / det, xy: -xy / det, yy: xx / det })
     }
 
     /// The lower Cholesky factor of a positive definite matrix. Returns `None` unless both pivots are finite and positive.
